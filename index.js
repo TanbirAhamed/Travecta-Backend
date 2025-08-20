@@ -1,6 +1,16 @@
-
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongodb+srv://travecta:xk0mUMXAH7IQ6ad3@travecta.hu95p25.mongodb.net/?retryWrites=true&w=majority&appName=travecta";
+
+// middleware
+app.use(express.json());
+app.use(cors());
+
+
+const uri = process.env.MONGO_URL;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -20,7 +30,15 @@ async function run() {
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
+
+app.get('/', (req, res) => {
+    res.send('Travecta Running Smoothly!');
+});
+
+app.listen(port, () => {
+    console.log(`Server is running on port: ${port}`);
+})
