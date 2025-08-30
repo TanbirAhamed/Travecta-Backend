@@ -28,26 +28,83 @@ async function run() {
 
     const database = client.db("travectaDB");
     const userCollection = database.collection('users');
-
+    const tripCollection = database.collection('trips');
 
     // user related api's
     app.get('/users', async (req, res) => {
-      const result = await userCollection.find().toArray();
-      res.send(result);
+      try {
+        const result = await userCollection.find().toArray();
+        res.status(200).send(result);
+      } catch (error) {
+        res.status(500).send({ message: 'Failed to load users!' });
+      }
     });
 
     app.post('/users', async (req, res) => {
       const user = req.body;
-      const query = { email: user?.email };
-      const exitingUser = await userCollection.findOne(query);
+      try {
+        const query = { email: user?.email };
+        const exitingUser = await userCollection.findOne(query);
 
-      if (exitingUser) {
-        return res.send({ massage: 'User already exists', insertedId: null })
+        if (exitingUser) {
+          return res.send({ massage: 'User already exists', insertedId: null })
+        }
+
+        const result = await userCollection.insertOne(user);
+        res.status(200).send(result);
+      } catch (error) {
+        res.status(500).send({ message: 'Failed to store/upload user!' });
+      }
+    });
+
+
+    // trips related api's
+    app.get('/trips', async (req, res) => {
+      try {
+        const result = await tripCollection.find().toArray();
+        res.status(200).send(result);
+      } catch (error) {
+        res.status(500).send({ message: 'Failed to load trips' });
       }
 
-      const result = await userCollection.insertOne(user);
-      res.send(result);
     });
+
+    app.get('/trips/:id', async (req, res) => {
+      const id = req.params.id;
+      try {
+        const query = { _id: new ObjectId(id) };
+        const result = await tripCollection.findOne(query);
+        res.status(200).send(result);
+      } catch (error) {
+        res.status(500).send({ message: 'Trips not found!' });
+      }
+    });
+
+    app.post('/trips', async (req, res) => {
+      const item = req.body;
+      try {
+        const result = await tripCollection.insertOne(item);
+        res.status(200).send(result);
+      } catch (error) {
+        res.status(500).send({ message: 'Failed to store/upload trip!' });
+      }
+
+    });
+
+    app.delete('/trips/:id', async (req, res) => {
+      const id = req.params.id;
+      try {
+        const query = { _id: new ObjectId(id) };
+        const result = await tripCollection.deleteOne(query);
+        res.status(200).send(result);
+      } catch (error) {
+        res.status(500).send({ message: 'Failed to delete trip!' });
+      }
+    });
+
+
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
