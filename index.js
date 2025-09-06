@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const app = express();
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -30,8 +31,33 @@ async function run() {
     const userCollection = database.collection('users');
     const tripCollection = database.collection('trips');
 
+    // jwt api's
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN, { expiresIn: '3h' });
+      res.send({ token });
+    });
+
+
+    // middlewares
+    const verifyToken = (req, res, next) => {
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: 'unauthorize access' });
+      }
+
+      const token = req.headers.authorization.split(' ')[1]
+      jwt.verify(token, process.env.ACCESS_TOKEN, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: 'unauthorize access' });
+        }
+        req.decoded = decoded;
+        next();
+      })
+    };
+
+
     // user related api's
-    app.get('/users', async (req, res) => {
+    app.get('/users', verifyToken, async (req, res) => {
       try {
         const result = await userCollection.find().toArray();
         res.status(200).send(result);
@@ -80,7 +106,7 @@ async function run() {
       }
     });
 
-    app.post('/trips', async (req, res) => {
+    app.post('/trips', verifyToken, async (req, res) => {
       const item = req.body;
       try {
         const result = await tripCollection.insertOne(item);
@@ -91,7 +117,7 @@ async function run() {
 
     });
 
-    app.delete('/trips/:id', async (req, res) => {
+    app.delete('/trips/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       try {
         const query = { _id: new ObjectId(id) };
