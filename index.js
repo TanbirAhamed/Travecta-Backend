@@ -86,8 +86,15 @@ async function run() {
 
     // trips related api's
     app.get('/trips', async (req, res) => {
+      const email = req.query.email;
+      let query = {};
+
+      if (email) {
+        query = { createdBy: email };
+      };
+      
       try {
-        const result = await tripCollection.find().toArray();
+        const result = await tripCollection.find(query).toArray();
         res.status(200).send(result);
       } catch (error) {
         res.status(500).send({ message: 'Failed to load trips' });
