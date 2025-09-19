@@ -20,6 +20,8 @@ async function connectDB() {
         userCollection: db.collection("users"),
         tripCollection: db.collection("trips"),
         expenseCollection: db.collection("expenses"),
+        itineraryCollection: db.collection("itineraries")
+        
     };
 }
 
