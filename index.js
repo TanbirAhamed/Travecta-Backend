@@ -4,7 +4,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const app = express();
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 // middleware
 app.use(express.json());
@@ -30,6 +30,7 @@ async function run() {
     const database = client.db("travectaDB");
     const userCollection = database.collection('users');
     const tripCollection = database.collection('trips');
+    const expenseCollection = database.collection('expenses');
 
     // jwt api's
     app.post('/jwt', async (req, res) => {
@@ -92,7 +93,7 @@ async function run() {
       if (email) {
         query = { createdBy: email };
       };
-      
+
       try {
         const result = await tripCollection.find(query).toArray();
         res.status(200).send(result);
@@ -102,8 +103,9 @@ async function run() {
 
     });
 
-    app.get('/trips/:id', async (req, res) => {
+    app.get('/trip/:id', async (req, res) => {
       const id = req.params.id;
+
       try {
         const query = { _id: new ObjectId(id) };
         const result = await tripCollection.findOne(query);
@@ -136,7 +138,55 @@ async function run() {
     });
 
 
+    // expense related api's
+    app.get('/expenses', async (req, res) => {
+      const tripId = req.query.tripId;
 
+      if (!tripId) {
+        return res.status(400).send({ message: 'tripId is required' });
+      }
+
+      try {
+        const tripExpenses = await expenseCollection.findOne({ tripId });
+
+        if (!tripExpenses) {
+          return res.status(404).send({ message: 'No expenses found for this trip' });
+        }
+
+        res.status(200).send({ tripId, expenses: tripExpenses.expenses });
+      } catch (error) {
+        res.status(500).send({ message: 'Failed to fetch expenses' });
+      }
+    });
+
+    app.post('/expenses', verifyToken, async (req, res) => {
+      const { tripId, tripName, createdBy, expense } = req.body;
+
+      try {
+        const existing = await expenseCollection.findOne({ tripId });
+
+        if (existing) {
+
+          const result = await expenseCollection.updateOne(
+            { tripId },
+            { $push: { expenses: expense } }
+          );
+          return res.status(200).send({ message: 'Expense added successfully!', result });
+        } else {
+
+          const newDoc = {
+            tripId,
+            tripName,
+            createdBy,
+            expenses: [expense],
+          };
+          const result = await expenseCollection.insertOne(newDoc);
+          return res.status(200).send({ message: 'Expense document created!', result });
+        }
+      } catch (error) {
+        res.status(500).send({ message: 'Failed to add expense!' });
+      }
+    });
 
 
     // Send a ping to confirm a successful connection
