@@ -4,7 +4,7 @@ const verifyToken = require("../middlewares/authMiddleware");
 module.exports = (userCollection) => {
     const router = express.Router();
 
-    router.get("/", verifyToken, async (req, res) => {
+    router.get("/",  async (req, res) => {
         try {
             const result = await userCollection.find().toArray();
             res.status(200).send(result);
