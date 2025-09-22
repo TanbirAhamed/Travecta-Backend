@@ -15,7 +15,7 @@ module.exports = (expenseCollection) => {
             const tripExpenses = await expenseCollection.findOne({ tripId });
 
             if (!tripExpenses) {
-                return res.status(404).send({ message: 'No expenses found for this trip' });
+                return res.status(200).send({ tripId, expenses: [] });
             }
 
             res.status(200).send({ tripId, expenses: tripExpenses.expenses });

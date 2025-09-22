@@ -15,7 +15,7 @@ module.exports = (itineraryCollection) => {
             const tripItinerary = await itineraryCollection.findOne({ tripId });
 
             if (!tripItinerary) {
-                return res.status(404).send({ message: "No itinerary found for this trip" });
+                return res.status(200).send({ itinerary: [] });
             }
 
             res.status(200).send({
