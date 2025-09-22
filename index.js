@@ -9,6 +9,7 @@ const userRoutes = require("./routes/userRoutes");
 const tripRoutes = require("./routes/tripRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const itineraryRoutes = require("./routes/itineraryRoutes");
+const joinRoutes = require("./routes/joinRequestsRoutes");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -24,11 +25,12 @@ app.post("/jwt", (req, res) => {
 });
 
 // Connect DB and mount routes
-connectDB().then(({ userCollection, tripCollection, expenseCollection, itineraryCollection }) => {
+connectDB().then(({ userCollection, tripCollection, expenseCollection, itineraryCollection, joinRequestCollection }) => {
   app.use("/users", userRoutes(userCollection));
   app.use("/trips", tripRoutes(tripCollection));
   app.use("/expenses", expenseRoutes(expenseCollection));
   app.use("/itinerary", itineraryRoutes(itineraryCollection));
+  app.use("/joinRequests", joinRoutes(joinRequestCollection));
 
   app.get("/", (req, res) => res.send("Travecta Running Smoothly!"));
 
