@@ -5,12 +5,12 @@ const verifyToken = require("../middlewares/authMiddleware");
 module.exports = (joinRequestCollection) => {
     const router = express.Router();
 
-    // Get join requests (optional filter: by userEmail or tripId)
     router.get("/", async (req, res) => {
-        const { email, tripId } = req.query;
+        const { email, tripId, joinedEmail } = req.query;
         let query = {};
 
-        if (email) query.userEmail = email;
+        if (email) query.tripCreatedBy = email;
+        if (joinedEmail) query.userEmail = joinedEmail;
         if (tripId) query.tripId = tripId;
 
         try {
