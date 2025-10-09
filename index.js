@@ -30,7 +30,7 @@ connectDB().then(({ userCollection, tripCollection, expenseCollection, itinerary
   app.use("/trips", tripRoutes(tripCollection));
   app.use("/expenses", expenseRoutes(expenseCollection));
   app.use("/itinerary", itineraryRoutes(itineraryCollection));
-  app.use("/joinRequests", joinRoutes(joinRequestCollection));
+  app.use("/joinRequests", joinRoutes(joinRequestCollection, tripCollection));
 
   app.get("/", (req, res) => res.send("Travecta Running Smoothly!"));
 
