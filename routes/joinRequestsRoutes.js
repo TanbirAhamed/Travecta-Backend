@@ -6,13 +6,13 @@ const verifyToken = require("../middlewares/authMiddleware");
 module.exports = (joinRequestCollection, tripCollection) => {
     const router = express.Router();
 
-    // GET all join requests (with optional filters)
+    // 🔹 GET all join requests (with optional filters)
     router.get("/", async (req, res) => {
         const { email, tripId, joinedEmail } = req.query;
         const query = {};
 
         if (email) query.tripCreatedBy = email;
-        if (joinedEmail) query.userEmail = joinedEmail;
+        if (joinedEmail) query.joinedEmail = joinedEmail;
         if (tripId) query.tripId = tripId;
 
         try {
@@ -23,7 +23,7 @@ module.exports = (joinRequestCollection, tripCollection) => {
         }
     });
 
-    // GET single join request
+    // 🔹 GET single join request
     router.get("/:id", async (req, res) => {
         const id = req.params.id;
         try {
@@ -35,22 +35,36 @@ module.exports = (joinRequestCollection, tripCollection) => {
         }
     });
 
-    // POST create join request
+    // 🔹 POST create join request
     router.post("/", verifyToken, async (req, res) => {
         const requestData = req.body;
         requestData.status = "pending";
         requestData.requestedAt = new Date();
 
         try {
-            // prevent duplicate requests
             const existing = await joinRequestCollection.findOne({
                 tripId: requestData.tripId,
                 joinedEmail: requestData.joinedEmail,
             });
 
-            if (existing) {
-                return res.status(200).send({ message: "Already requested this trip", acknowledged: false });
-            };
+            // ✅ allow re-request if previously rejected or cancelled
+            if (
+                existing &&
+                existing.status !== "rejected" &&
+                existing.status !== "cancelled"
+            ) {
+                return res
+                    .status(200)
+                    .send({ message: "Already requested this trip", acknowledged: false });
+            }
+
+            // delete old rejected/cancelled record
+            if (
+                existing &&
+                (existing.status === "rejected" || existing.status === "cancelled")
+            ) {
+                await joinRequestCollection.deleteOne({ _id: existing._id });
+            }
 
             const result = await joinRequestCollection.insertOne(requestData);
             res.status(200).send(result);
@@ -59,7 +73,7 @@ module.exports = (joinRequestCollection, tripCollection) => {
         }
     });
 
-    // PATCH update join request status (approve/reject)
+    // 🔹 PATCH update join request status (approve/reject)
     router.patch("/:id", verifyToken, async (req, res) => {
         const id = req.params.id;
         const { status } = req.body;
@@ -69,23 +83,27 @@ module.exports = (joinRequestCollection, tripCollection) => {
             const joinReq = await joinRequestCollection.findOne(query);
             if (!joinReq) return res.status(404).send({ message: "Join request not found" });
 
-            // update join request status
             await joinRequestCollection.updateOne(query, { $set: { status } });
 
-            // if accepted, update the trip collaborators
+            // If accepted, push collaborator to trip
             if (status === "accepted") {
-                const trip = await tripCollection.findOne({ _id: new ObjectId(joinReq.tripId) });
+                const trip = await tripCollection.findOne({
+                    _id: new ObjectId(joinReq.tripId),
+                });
                 if (!trip) return res.status(404).send({ message: "Trip not found" });
 
-                const collaborators = Array.isArray(trip?.collaborators) ? trip?.collaborators : [];
+                const collaborators = Array.isArray(trip?.collaborators)
+                    ? trip.collaborators
+                    : [];
 
-                // check limit
-                if (collaborators?.length >= trip?.participants) {
+                if (collaborators.length >= trip.participants) {
                     return res.status(400).send({ message: "Trip participant limit reached!" });
                 }
 
-                // avoid duplicate collaborators
-                const alreadyJoined = collaborators.some(c => c.email === joinReq.joinedEmail);
+                const alreadyJoined = collaborators.some(
+                    (c) => c.email === joinReq.joinedEmail
+                );
+
                 if (!alreadyJoined) {
                     const newMember = {
                         name: joinReq.joinedName,
@@ -107,7 +125,7 @@ module.exports = (joinRequestCollection, tripCollection) => {
         }
     });
 
-    // DELETE cancel join request
+    // 🔹 DELETE cancel join request
     router.delete("/:id", verifyToken, async (req, res) => {
         const id = req.params.id;
         try {
