@@ -77,10 +77,10 @@ module.exports = (joinRequestCollection, tripCollection) => {
                 const trip = await tripCollection.findOne({ _id: new ObjectId(joinReq.tripId) });
                 if (!trip) return res.status(404).send({ message: "Trip not found" });
 
-                const collaborators = Array.isArray(trip.collaborators) ? trip.collaborators : [];
+                const collaborators = Array.isArray(trip?.collaborators) ? trip?.collaborators : [];
 
                 // check limit
-                if (collaborators.length >= trip.participants) {
+                if (collaborators?.length >= trip?.participants) {
                     return res.status(400).send({ message: "Trip participant limit reached!" });
                 }
 
@@ -88,9 +88,9 @@ module.exports = (joinRequestCollection, tripCollection) => {
                 const alreadyJoined = collaborators.some(c => c.email === joinReq.userEmail);
                 if (!alreadyJoined) {
                     const newMember = {
-                        name: joinReq.userName,
-                        email: joinReq.userEmail,
-                        image: joinReq.userImage,
+                        name: joinReq.joinedEmail,
+                        email: joinReq.joinedName,
+                        image: joinReq.joinedPhoto,
                         joinedAt: new Date(),
                     };
 
@@ -103,7 +103,6 @@ module.exports = (joinRequestCollection, tripCollection) => {
 
             res.status(200).send({ message: "Join request updated successfully" });
         } catch (error) {
-            console.error(error);
             res.status(500).send({ message: "Failed to update join request!" });
         }
     });
