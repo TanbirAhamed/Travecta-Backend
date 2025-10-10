@@ -45,12 +45,12 @@ module.exports = (joinRequestCollection, tripCollection) => {
             // prevent duplicate requests
             const existing = await joinRequestCollection.findOne({
                 tripId: requestData.tripId,
-                userEmail: requestData.userEmail,
+                joinedEmail: requestData.joinedEmail,
             });
 
             if (existing) {
-                return res.status(400).send({ message: "Already requested this trip" });
-            }
+                return res.status(200).send({ message: "Already requested this trip", acknowledged: false });
+            };
 
             const result = await joinRequestCollection.insertOne(requestData);
             res.status(200).send(result);
@@ -85,11 +85,11 @@ module.exports = (joinRequestCollection, tripCollection) => {
                 }
 
                 // avoid duplicate collaborators
-                const alreadyJoined = collaborators.some(c => c.email === joinReq.userEmail);
+                const alreadyJoined = collaborators.some(c => c.email === joinReq.joinedEmail);
                 if (!alreadyJoined) {
                     const newMember = {
-                        name: joinReq.joinedEmail,
-                        email: joinReq.joinedName,
+                        name: joinReq.joinedName,
+                        email: joinReq.joinedEmail,
                         image: joinReq.joinedPhoto,
                         joinedAt: new Date(),
                     };
