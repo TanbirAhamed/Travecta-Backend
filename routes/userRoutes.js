@@ -13,6 +13,33 @@ module.exports = (userCollection) => {
         }
     });
 
+    router.get('/role/:email', verifyToken, async (req, res) => {
+        try {
+            const email = req.params.email;
+
+            if (email !== req.decoded.email) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+
+            const query = { email };
+            const user = await userCollection.findOne(query);
+
+            let admin = false;
+            let moderator = false;
+
+            if (user) {
+                admin = user?.role === 'admin';
+                moderator = user?.role === 'moderator';
+            }
+
+            res.status(200).send({ admin, moderator });
+
+        } catch (error) {
+            res.status(500).send({ message: 'Internal Server Error' });
+        }
+    });
+
+
     router.post("/", async (req, res) => {
         const user = req.body;
         try {
