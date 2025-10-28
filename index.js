@@ -27,7 +27,7 @@ app.post("/jwt", (req, res) => {
 // Connect DB and mount routes
 connectDB().then(({ userCollection, tripCollection, expenseCollection, itineraryCollection, joinRequestCollection }) => {
   app.use("/users", userRoutes(userCollection));
-  app.use("/trips", tripRoutes(tripCollection));
+  app.use("/trips", tripRoutes(tripCollection, userCollection));
   app.use("/expenses", expenseRoutes(expenseCollection));
   app.use("/itinerary", itineraryRoutes(itineraryCollection));
   app.use("/joinRequests", joinRoutes(joinRequestCollection, tripCollection));
